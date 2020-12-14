@@ -8,60 +8,42 @@ fetch('https://adventofcode.com/2020/day/7/input', {
 })
     .then(res => res.text())
     .then(data => {
-        data = data.trim();
-        data = data.split('\n');
-        const bags = bagCeption(data);
+        data = data.trim().split('\n');
+        const bags = getListOfBags(data);
         let answer = 0;
-
-        for (let [name, content] of Object.entries(bags)) {
-            let ree = checkBag(content, bags, content);
-            ree = [].concat.apply([], ree);
-            if (ree.includes('shiny gold')) answer++;
+        for (let bag in bags) {
+            const bagsChecked = new Set();
+            const listOfBags = checkBag(bags, bag, bagsChecked)
+            if (listOfBags.has('shiny gold')) {
+                answer++;
+            }
         }
         console.log(answer);
-
     }
     );
 
-const checkBag = (bagName, bags, namesInBag) => {
-    if (bagName == undefined)
-        return namesInBag
-    bagName.forEach(name => {
-        if (name != 'no other' && bags[name] != 'no other' && name != 'shiny gold' && !namesInBag.includes('shiny gold')) {
-            if (bags[name] != undefined)
-                if (bags[name].includes('shiny gold')) {
-                    namesInBag.push('shiny gold')
-                    return ['shiny gold'];
-                } else namesInBag.push(bags[name]);
-            if (bags[name] != undefined) {
-                if (bags[name].includes('shiny gold')) {
-                    return namesInBag;
-                }
-                checkBag(bags[name], bags, namesInBag)
+const getListOfBags = (data) => {
+    let bagDictionary = {};
+    data.forEach(line => {
+        let [mainBag, bagContent] = line.split(' bags contain ');
+        bagContent = bagContent.substring(0, bagContent.length - 1).replace(/(\sbags|\sbag)/g, '');
+        const bagContentArray = bagContent.split(',');
+        const bagObject = []
+        bagContentArray.forEach(content => {
+            content = content.trim();
+            if (content != 'no other') {
+                bagObject.push(content.substring(2, content.length));
             }
-        } else return namesInBag;
+        })
+        bagDictionary[mainBag] = bagObject;
     })
-    return namesInBag
-
+    return bagDictionary
 }
 
-const bagCeption = (data) => {
-    let bags = {};
-    data.forEach(line => {
-        let bagsInBag = line.split(' contain ');
-        bagsInBag[1] = bagsInBag[1].substring(0, bagsInBag[1].length - 1);
-        bagsInBag[1] = bagsInBag[1].replace(/( bags|bag)/g, '');
-        bagsInBag[0] = bagsInBag[0].replace(/( bags|bag)/g, '');
-        let bagArray = bagsInBag[1].split(',');
-        const bagCeption = [];
-        bagArray.forEach(baggie => {
-            baggie = baggie.trim();
-            if (baggie != 'no other')
-                baggies = baggie.substring(bagsInBag[1].indexOf(' ') + 1);
-            else baggies = baggie;
-            bagCeption.push(baggies);
-        })
-        bags[bagsInBag[0]] = bagCeption;
+const checkBag = (bags, bag, bagsChecked) => { 
+    bags[bag].forEach(content => {
+        bagsChecked.add(content);
+        checkBag(bags, content, bagsChecked);
     })
-    return bags;
+    return bagsChecked;
 }
